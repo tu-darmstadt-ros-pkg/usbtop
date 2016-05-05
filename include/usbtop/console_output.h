@@ -31,6 +31,8 @@
 #ifndef USBTOP_CONSOLE_OUTPUT_H
 #define USBTOP_CONSOLE_OUTPUT_H
 
+#include <string>
+
 namespace usbtop {
 
 class UsbBus;
@@ -43,6 +45,7 @@ public:
 private:
 	static void clear_screen();
 	static void print_stats();
+    static std::string bytes_to_string(double bytes);
 	static void print_stats_bus(UsbBus const& bus);
 };
 

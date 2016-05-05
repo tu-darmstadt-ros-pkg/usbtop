@@ -37,6 +37,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
 #include <unistd.h>
 
@@ -65,18 +66,49 @@ void usbtop::ConsoleOutput::print_stats()
 		{ print_stats_bus(*bus); });
 }
 
+std::string usbtop::ConsoleOutput::bytes_to_string(double bytes)
+{
+    std::stringstream returnVal;
+    returnVal.precision(2);
+    returnVal << std::fixed;
+    if (bytes < 500.0)
+    {
+        returnVal << bytes << " b/s";
+    }
+    else if (bytes < 500000.0)
+    {
+        returnVal << bytes/1000.0 << " kb/s";
+    }
+    else
+    {
+        returnVal << bytes/1000000.0 << " Mb/s";
+    }
+
+    return returnVal.str();
+}
+
 void usbtop::ConsoleOutput::print_stats_bus(UsbBus const& bus)
 {
 	std::cout << "Bus ID " << bus.id() << " (" << bus.desc() << ")"; 
-	std::cout << "\tTo device\tFrom device" << std::endl;
+    std::cout << "\tTo Device\tFrom Device" << std::endl;
 	UsbBus::list_devices_t const& devs = bus.devices();
 	UsbBus::list_devices_t::const_iterator it;
+    double cumulative_to(0);
+    double cumulative_from(0);
+
 	for (it = devs.begin(); it != devs.end(); it++) {
 		UsbDevice const& dev(*it->second);
 		UsbStats const& stats(dev.stats());
-		std::cout << "  Device ID " << it->first << " :\t";
-		double stats_to = stats.stats_to_device().bw_instant()/1024.0;
-		double stats_from = stats.stats_from_device().bw_instant()/1024.0;
-		std::cout << "\t\t" << stats_to << " kb/s\t" << stats_from << " kb/s" << std::endl;
+        std::cout << "  Device ID " << std::setw(3) << it->first << ":\t";
+        double stats_to = stats.stats_to_device().bw_instant();
+        double stats_from = stats.stats_from_device().bw_instant();
+
+        cumulative_to += stats_to;
+        cumulative_from += stats_from;
+
+        std::cout << "\t" << bytes_to_string(stats_to) << "\t" << bytes_to_string(stats_from) << std::endl;
 	}
+    std::cout << "  ---------------------------------------------------------------------------" << std::endl;
+    std::cout << "  Total:\t\t\t" << bytes_to_string(cumulative_to) << "\t" << bytes_to_string(cumulative_from) << std::endl;
+    std::cout << std::endl;
 }
