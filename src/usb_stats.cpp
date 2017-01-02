@@ -120,3 +120,8 @@ double usbtop::Stats::bw_mean() const
 {
 	return (double)_nbytes/(_tN-_t0);
 }
+
+long usbtop::Stats::pkt_per_window() const
+{
+	return (long)_inst_data.size();
+}

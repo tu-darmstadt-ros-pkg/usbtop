@@ -90,25 +90,33 @@ std::string usbtop::ConsoleOutput::bytes_to_string(double bytes)
 void usbtop::ConsoleOutput::print_stats_bus(UsbBus const& bus)
 {
 	std::cout << "Bus ID " << bus.id() << " (" << bus.desc() << ")"; 
-    std::cout << "\tTo Device\tFrom Device" << std::endl;
+    std::cout << "\tBW to device\tBW from device\tNb to device\tNb from device" << std::endl;
 	UsbBus::list_devices_t const& devs = bus.devices();
 	UsbBus::list_devices_t::const_iterator it;
-    double cumulative_to(0);
-    double cumulative_from(0);
+    double cumulative_bw_to(0);
+    double cumulative_bw_from(0);
+	long cumulative_npackets_to(0);
+	long cumulative_npackets_from(0);
 
 	for (it = devs.begin(); it != devs.end(); it++) {
 		UsbDevice const& dev(*it->second);
 		UsbStats const& stats(dev.stats());
         std::cout << "  Device ID " << std::setw(3) << it->first << ":\t";
-        double stats_to = stats.stats_to_device().bw_instant();
-        double stats_from = stats.stats_from_device().bw_instant();
+        double bw_to = stats.stats_to_device().bw_instant();
+        double bw_from = stats.stats_from_device().bw_instant();
+		long npackets_to = stats.stats_to_device().pkt_per_window();
+		long npackets_from = stats.stats_from_device().pkt_per_window();
 
-        cumulative_to += stats_to;
-        cumulative_from += stats_from;
+        cumulative_bw_to += bw_to;
+        cumulative_bw_from += bw_from;
+		cumulative_npackets_to += npackets_to;
+		cumulative_npackets_from += npackets_from;
 
-        std::cout << "\t" << bytes_to_string(stats_to) << "\t" << bytes_to_string(stats_from) << std::endl;
+        std::cout << "\t" << bytes_to_string(bw_to) << "\t" << bytes_to_string(bw_from) << "\t";
+		std::cout << npackets_to << " pkts/s\t" << npackets_from << " pkts/s" << std::endl;
 	}
     std::cout << "  ---------------------------------------------------------------------------" << std::endl;
-    std::cout << "  Total:\t\t\t" << bytes_to_string(cumulative_to) << "\t" << bytes_to_string(cumulative_from) << std::endl;
+    std::cout << "  Total:\t\t\t" << bytes_to_string(cumulative_bw_to) << "\t" << bytes_to_string(cumulative_bw_from) << "\t";
+	std::cout << cumulative_npackets_to << " pkts/s\t" << cumulative_npackets_from << " pkts/s" << std::endl;
     std::cout << std::endl;
 }

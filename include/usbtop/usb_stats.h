@@ -37,7 +37,7 @@
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/shared_mutex.hpp>
 
-#define LIVE_SAMPLE_COUNT 128
+#define LIVE_SAMPLE_COUNT 2048
 
 namespace usbtop {
 
@@ -60,6 +60,7 @@ public:
 public:
 	double bw_instant() const;
 	double bw_mean() const;
+	long pkt_per_window() const;
 
 private:
 	// Global stats
