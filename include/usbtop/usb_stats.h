@@ -38,6 +38,8 @@
 #include <boost/thread/shared_mutex.hpp>
 
 #define INITIAL_BUFFER_SIZE 128
+#define WINDOW_SECOND 		1.0		// Time in seconds for this type of window
+#define WINDOW_MINUTE		60.0	// Time in seconds for this type of window
 
 namespace usbtop {
 
@@ -47,26 +49,29 @@ class Stats: boost::noncopyable
 public:
 	Stats();
 	Stats(Stats&& o):
-		_nbytes(o._nbytes),
-		_tN(o._tN),
-		_nsamples(o._nsamples),
+		_total_samples(o._total_samples),
+		_total_tsize(o._total_tsize),
+		_current_tsize(o._current_tsize),
+		_tN(o._tN),		
 		_inst_data(std::move(o._inst_data))
 	{ }
 
 public:
-	static void init();
+	static void init(double window_time);
 	void push(double timestamp, size_t spacket);
+	static double get_window_time();
 
 public:
 	double bw_instant() const;
 	double bw_mean() const;
-	long pkt_per_window() const;
+	long sample_rate() const;
 
 private:
 	// Global stats
-	size_t _nbytes;
+	size_t _total_samples;
+	size_t _total_tsize;
+	size_t _current_tsize;
 	double _tN;
-	size_t _nsamples;
 
 	// "Instantaneous" stats
 	std::vector<sample_t> _inst_data;
@@ -78,8 +83,11 @@ private:
 	// Last "instantaneous" stats
 	double _last_inst_bw;
 
+	// Last "instantaneous" number of packets per seconds
+	size_t _last_inst_sample_rate;
+
 	// Time window for statistics in seconds
-	double _stats_window;
+	static double _stats_window;
 };
 
 class UsbStats: boost::noncopyable

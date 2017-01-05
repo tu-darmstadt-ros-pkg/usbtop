@@ -37,31 +37,39 @@
 //  * we need to do some real tests & math here to have accurate values.. !
 
 double usbtop::Stats::_t0 = 0;
+double usbtop::Stats::_stats_window = WINDOW_SECOND; // Stats per second by default
 
 usbtop::Stats::Stats():
-	_nbytes(0),
+	_total_samples(0),
+	_total_tsize(0),
+	_current_tsize(0),
 	_tN(0),
-	_nsamples(0),
 	_inst_data(INITIAL_BUFFER_SIZE),
-	_last_inst_bw(0.0),
-	_stats_window(1.0)
+	_last_inst_bw(0.0)
 {
 }
 
-void usbtop::Stats::init()
+void usbtop::Stats::init(double window_time)
 {
 	_t0 = usbtop::tools::get_current_timestamp();
+	_stats_window = window_time;
+}
+
+double usbtop::Stats::get_window_time()
+{
+	return _stats_window;
 }
 
 void usbtop::Stats::push(double timestamp, size_t spacket)
 {
-	_nsamples++;
-	_nbytes += spacket;
+	_total_samples++;
+	_total_tsize += spacket;
+	_current_tsize += spacket;
 
 	double first_ts = timestamp-_stats_window;
 
-	// Remove oldest samples
 	
+	// Insert new sample
 	_inst_data.push_back(sample_t(timestamp, spacket));
 
 	if (timestamp < _tN+0.2) {
@@ -69,6 +77,8 @@ void usbtop::Stats::push(double timestamp, size_t spacket)
 	}
 
 	_tN = timestamp;
+
+	// Remove samples which are out of the current window
 
 	std::vector<sample_t>::iterator it;
 	std::vector<sample_t>::iterator it_last_rem;
@@ -81,23 +91,22 @@ void usbtop::Stats::push(double timestamp, size_t spacket)
 		it_last_rem = it;
 	}
 	if (to_rem) {
+		// Remove too old packets and update current window size
 		it_last_rem++;
+		for (it = _inst_data.begin(); it != it_last_rem; it++) {
+			_current_tsize -= it->second;
+		}
 		_inst_data.erase(_inst_data.begin(), it_last_rem);
 	}
 	// Compute instant bw at this instant
-	size_t tsize = 0.0;
-	{
-		std::vector<sample_t>::const_iterator it;
-		for (it = _inst_data.begin(); it != _inst_data.end(); it++) {
-			tsize += it->second;
-		}
-	}
 	const double first_ts_buf = _inst_data.front().first;
 	if (timestamp == first_ts_buf) {
 		_last_inst_bw = 0.0;
+		_last_inst_sample_rate = 0;
 	}
 	else {
-		_last_inst_bw = ((double)tsize)/(timestamp-first_ts_buf);
+		_last_inst_bw = ((double)_current_tsize)/(timestamp-first_ts_buf);
+		_last_inst_sample_rate = (size_t)( (_inst_data.size()) / (timestamp-first_ts_buf) );
 	}
 }
 
@@ -118,10 +127,10 @@ double usbtop::Stats::bw_instant() const
 
 double usbtop::Stats::bw_mean() const
 {
-	return (double)_nbytes/(_tN-_t0);
+	return (double)_total_tsize/(_tN-_t0);
 }
 
-long usbtop::Stats::pkt_per_window() const
+long usbtop::Stats::sample_rate() const
 {
-	return (long)_inst_data.size();
+	return _last_inst_sample_rate;
 }

@@ -75,6 +75,8 @@ void usage(char* path)
 	std::cerr << "\t\t\tList available USB buses" << std::endl;
 	std::cerr << "\t\t--bus busid" << std::endl;
 	std::cerr << "\t\t\tWatch only bus busid" << std::endl;
+	std::cerr << "\t\t--minute" << std::endl;
+	std::cerr << "\t\t\tGive stats by minute (second by default)" << std::endl;
 }
 
 void pcap_loop_callback(u_char* user, const struct pcap_pkthdr *h, const u_char* bytes)
@@ -145,6 +147,7 @@ void quit_handler(int sig)
 }
 
 int show_list = 0;
+int minute_window = 0;
 
 int main(int argc, char** argv)
 {
@@ -157,6 +160,7 @@ int main(int argc, char** argv)
 		// name, has_arg, *flag, val
 		{"list", 0, &show_list, 1},
 		{"bus", 1, 0, 'b'},
+		{"minute", 0, &minute_window, 1},
 		{0, 0, 0, 0}
 	};
 
@@ -204,7 +208,12 @@ int main(int argc, char** argv)
 	const size_t nbuses = usbtop::UsbBuses::size();
 	pcap_hs.reserve(nbuses);
 
-	usbtop::Stats::init();
+	if (minute_window) {
+		usbtop::Stats::init(WINDOW_MINUTE);
+	}
+	else {
+		usbtop::Stats::init(WINDOW_SECOND);
+	}
 
 	// Open pcap handles in non-blocking mode and launch a thread that will process them
 	usbtop::UsbBuses::list_pop([=,&pcap_hs](usbtop::UsbBus* bus)
