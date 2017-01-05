@@ -37,7 +37,7 @@
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/shared_mutex.hpp>
 
-#define LIVE_SAMPLE_COUNT 2048
+#define INITIAL_BUFFER_SIZE 128
 
 namespace usbtop {
 
@@ -69,7 +69,7 @@ private:
 	size_t _nsamples;
 
 	// "Instantaneous" stats
-	boost::circular_buffer<sample_t> _inst_data;
+	std::vector<sample_t> _inst_data;
 	mutable boost::shared_mutex _access;
 
 	// Timestamp when the application is launched. Used as t0

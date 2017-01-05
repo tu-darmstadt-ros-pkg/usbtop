@@ -42,7 +42,7 @@ usbtop::Stats::Stats():
 	_nbytes(0),
 	_tN(0),
 	_nsamples(0),
-	_inst_data(LIVE_SAMPLE_COUNT),
+	_inst_data(INITIAL_BUFFER_SIZE),
 	_last_inst_bw(0.0),
 	_stats_window(1.0)
 {
@@ -70,8 +70,8 @@ void usbtop::Stats::push(double timestamp, size_t spacket)
 
 	_tN = timestamp;
 
-	boost::circular_buffer<sample_t>::iterator it;
-	boost::circular_buffer<sample_t>::iterator it_last_rem;
+	std::vector<sample_t>::iterator it;
+	std::vector<sample_t>::iterator it_last_rem;
 	bool to_rem = false;
 	for (it = _inst_data.begin(); it != _inst_data.end(); it++) {
 		if (it->first >= first_ts) {
@@ -87,7 +87,7 @@ void usbtop::Stats::push(double timestamp, size_t spacket)
 	// Compute instant bw at this instant
 	size_t tsize = 0.0;
 	{
-		boost::circular_buffer<sample_t>::const_iterator it;
+		std::vector<sample_t>::const_iterator it;
 		for (it = _inst_data.begin(); it != _inst_data.end(); it++) {
 			tsize += it->second;
 		}
