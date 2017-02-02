@@ -47,6 +47,16 @@ private:
 	static void print_stats();
     static std::string bytes_to_string(double bytes);
 	static void print_stats_bus(UsbBus const& bus);
+	static void print_csv();
+	static void print_csv_bus(UsbBus const& bus);
+	static void initialize_csv();
+	static void initialize_csv_bus(UsbBus const& bus);
+
+public:
+	static int csv;
+private:
+	// Start time of the logger
+	static double _t0;
 };
 
 }

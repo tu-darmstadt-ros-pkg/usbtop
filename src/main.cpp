@@ -148,6 +148,7 @@ void quit_handler(int sig)
 
 int show_list = 0;
 int minute_window = 0;
+int usbtop::ConsoleOutput::csv = 0;
 
 int main(int argc, char** argv)
 {
@@ -161,6 +162,7 @@ int main(int argc, char** argv)
 		{"list", 0, &show_list, 1},
 		{"bus", 1, 0, 'b'},
 		{"minute", 0, &minute_window, 1},
+		{"csv", 0, &(usbtop::ConsoleOutput::csv), 1},
 		{0, 0, 0, 0}
 	};
 

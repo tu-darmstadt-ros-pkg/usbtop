@@ -34,6 +34,7 @@
 #include <usbtop/usb_stats.h>
 #include <usbtop/console_output.h>
 #include <usbtop/should_stop.h>
+#include <usbtop/tools.h>
 
 #include <iostream>
 #include <iomanip>
@@ -41,18 +42,99 @@
 
 #include <unistd.h>
 
+double usbtop::ConsoleOutput::_t0 = 0;
+
 void usbtop::ConsoleOutput::main()
 {
 	std::cout.precision(2);
 	std::cout.setf(std::ios::fixed);
-	while (true) {
-		usleep(250*1000);
-		if (usbtop::ShouldStop::value()) {
-			break;
+	if(csv){
+		// Wait 1 second to be sure that all of the USB devices has been 
+		// recognized before initialization of the CSV file.
+		usleep(1000*1000);
+		initialize_csv();
+		while (true) {
+			usleep(250*1000);
+			if (usbtop::ShouldStop::value()) {
+				break;
+			}
+			print_csv();
 		}
-		clear_screen();
-		print_stats();
 	}
+	else{
+		while (true) {
+			usleep(250*1000);
+			if (usbtop::ShouldStop::value()) {
+				break;
+			}
+			clear_screen();
+			print_stats();
+		}
+	}
+}
+
+void usbtop::ConsoleOutput::initialize_csv()
+{
+	std::cout << "Time" << ",";
+	UsbBuses::list_pop([](UsbBus const* bus)
+		{ initialize_csv_bus(*bus); });
+	std::cout << std::endl;
+}
+
+void usbtop::ConsoleOutput::initialize_csv_bus(UsbBus const& bus)
+{
+	UsbBus::list_devices_t const& devs = bus.devices();
+	UsbBus::list_devices_t::const_iterator it;
+	for (it = devs.begin(); it != devs.end(); it++) {
+	    std::cout << "Bus_" << bus.id() << "_Device_" << it->first << "_BW_to" << ",";
+	    std::cout << "Bus_" << bus.id() << "_Device_" << it->first << "_BW_from" << ",";
+	    std::cout << "Bus_" << bus.id() << "_Device_" << it->first << "_Nb_to" << ",";
+	    std::cout << "Bus_" << bus.id() << "_Device_" << it->first << "_Nb_from" << ",";
+	}
+	std::cout << "Bus_" << bus.id() << "_Total_" << "BW_to" << ",";
+    std::cout << "Bus_" << bus.id() << "_Total_" << "BW_from" << ",";
+    std::cout << "Bus_" << bus.id() << "_Total_" << "Nb_to" << ",";
+    std::cout << "Bus_" << bus.id() << "_Total_" << "Nb_from" << ",";
+	
+	_t0 = usbtop::tools::get_current_timestamp();
+}
+
+void usbtop::ConsoleOutput::print_csv()
+{
+	// Write time
+	double t = usbtop::tools::get_current_timestamp();
+	std::cout << t - _t0 << ",";
+	// Write stats of buses
+	UsbBuses::list_pop([](UsbBus const* bus)
+		{ print_csv_bus(*bus); });
+	std::cout << std::endl;
+}
+
+void usbtop::ConsoleOutput::print_csv_bus(UsbBus const& bus)
+{
+	UsbBus::list_devices_t const& devs = bus.devices();
+	UsbBus::list_devices_t::const_iterator it;
+    double cumulative_bw_to(0);
+    double cumulative_bw_from(0);
+	long cumulative_npackets_to(0);
+	long cumulative_npackets_from(0);
+
+	for (it = devs.begin(); it != devs.end(); it++) {
+		UsbDevice const& dev(*it->second);
+		UsbStats const& stats(dev.stats());
+        double bw_to = stats.stats_to_device().bw_instant();
+        double bw_from = stats.stats_from_device().bw_instant();
+		long npackets_to = stats.stats_to_device().sample_rate();
+		long npackets_from = stats.stats_from_device().sample_rate();
+
+        cumulative_bw_to += bw_to;
+        cumulative_bw_from += bw_from;
+		cumulative_npackets_to += npackets_to;
+		cumulative_npackets_from += npackets_from;
+
+        std::cout << bw_to << "," << bw_from << "," << npackets_to << "," << npackets_from << ",";
+	}
+	std::cout << cumulative_bw_to << "," << cumulative_bw_from << "," << cumulative_npackets_to << "," << cumulative_npackets_from << ",";
 }
 
 void usbtop::ConsoleOutput::clear_screen()
