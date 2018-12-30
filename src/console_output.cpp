@@ -155,15 +155,15 @@ std::string usbtop::ConsoleOutput::bytes_to_string(double bytes)
     returnVal << std::fixed;
     if (bytes < 500.0)
     {
-        returnVal << bytes << " b/s";
+        returnVal << std::right << std::setw(6) << bytes << std::left << "  B/s";
     }
     else if (bytes < 500000.0)
     {
-        returnVal << bytes/1000.0 << " kb/s";
+        returnVal << std::right << std::setw(6) << bytes/1000.0 << std::left << " KB/s";
     }
     else
     {
-        returnVal << bytes/1000000.0 << " Mb/s";
+        returnVal << std::right << std::setw(6) << bytes/1000000.0 << std::left << " MB/s";
     }
 
     return returnVal.str();
@@ -195,10 +195,10 @@ void usbtop::ConsoleOutput::print_stats_bus(UsbBus const& bus)
 		cumulative_npackets_from += npackets_from;
 
         std::cout << "\t" << bytes_to_string(bw_to) << "\t" << bytes_to_string(bw_from) << "\t";
-		std::cout << npackets_to << " pkts/s\t" << npackets_from << " pkts/s" << std::endl;
+		std::cout << std::right << std::setw(5) << npackets_to << " pkts/s\t" << std::setw(5) << npackets_from << " pkts/s" << std::endl;
 	}
     std::cout << "  ---------------------------------------------------------------------------------------------" << std::endl;
     std::cout << "  Total:\t\t\t" << bytes_to_string(cumulative_bw_to) << "\t" << bytes_to_string(cumulative_bw_from) << "\t";
-	std::cout << cumulative_npackets_to << " pkts/s\t" << cumulative_npackets_from << " pkts/s" << std::endl;
+	std::cout << std::right << std::setw(5) << cumulative_npackets_to << " pkts/s\t" << std::setw(5) << cumulative_npackets_from << " pkts/s" << std::endl;
     std::cout << std::endl;
 }
